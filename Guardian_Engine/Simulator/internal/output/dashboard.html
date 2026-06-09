@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Telemetry - Live Stream</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1419; color: #e7e9ea; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 20px; color: #1d9bf0; }
+  .stats { text-align: center; margin-bottom: 20px; color: #71767b; font-size: 14px; }
+  .stats span { color: #1d9bf0; font-weight: bold; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; }
+  .card { background: #16202a; border: 1px solid #2f3336; border-radius: 12px; padding: 16px; transition: border-color 0.3s; }
+  .card.updated { border-color: #1d9bf0; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .vin { font-weight: bold; font-size: 16px; color: #1d9bf0; }
+  .model { color: #71767b; font-size: 13px; }
+  .status { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .status.healthy { background: #00321e; color: #00ba7c; }
+  .status.warning { background: #332200; color: #ffad1f; }
+  .status.critical { background: #320a0a; color: #f4212e; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric { background: #1c2732; border-radius: 8px; padding: 8px 12px; }
+  .metric-label { font-size: 11px; color: #71767b; text-transform: uppercase; }
+  .metric-value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .mode-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .mode-driving { background: #1a3a2a; color: #00ba7c; }
+  .mode-parked { background: #2a2a1a; color: #ffad1f; }
+  .mode-charging { background: #1a2a3a; color: #1d9bf0; }
+  .mode-idle { background: #2a2a2a; color: #71767b; }
+  .conn-status { font-size: 12px; margin-left: 8px; }
+  .conn-status.connected { color: #00ba7c; }
+  .conn-status.unstable { color: #ffad1f; }
+  .conn-status.disconnected { color: #f4212e; }
+  .failures { margin-top: 8px; padding: 8px; background: #2a1515; border-radius: 8px; font-size: 12px; color: #f4212e; }
+</style>
+</head>
+<body>
+<h1>Vehicle Telemetry Live Stream</h1>
+<div class="stats">
+  Connected: <span id="connStatus">Connecting...</span> |
+  Messages: <span id="msgCount">0</span> |
+  Vehicles: <span id="vehCount">0</span>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const vehicles = {};
+let msgCount = 0;
+
+const evtSource = new EventSource('/sse');
+
+evtSource.onopen = function() {
+  document.getElementById('connStatus').textContent = 'Yes';
+  document.getElementById('connStatus').style.color = '#00ba7c';
+};
+
+evtSource.onerror = function() {
+  document.getElementById('connStatus').textContent = 'Reconnecting...';
+  document.getElementById('connStatus').style.color = '#ffad1f';
+};
+
+evtSource.onmessage = function(event) {
+  msgCount++;
+  document.getElementById('msgCount').textContent = msgCount;
+  var data = JSON.parse(event.data);
+  vehicles[data.vin] = data;
+  document.getElementById('vehCount').textContent = Object.keys(vehicles).length;
+  renderVehicle(data);
+};
+
+function renderVehicle(v) {
+  var card = document.getElementById('card-' + v.vin);
+  if (!card) {
+    card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + v.vin;
+    document.getElementById('grid').appendChild(card);
+  }
+  card.classList.add('updated');
+  setTimeout(function() { card.classList.remove('updated'); }, 1000);
+
+  var mode = v.drivingState.drivingMode || 'parked';
+  var connState = v.connectivity.connectionState || 'unknown';
+  var failures = v.failureReasons || [];
+  var otaProgress = v.ota.otaProgressPercent > 0 ? ' (' + v.ota.otaProgressPercent + '%)' : '';
+  var failureHTML = '';
+  if (failures.length > 0) {
+    var items = [];
+    for (var i = 0; i < failures.length; i++) {
+      items.push(failures[i].errorCode + ': ' + failures[i].message);
+    }
+    failureHTML = '<div class="failures">' + items.join('<br>') + '</div>';
+  }
+
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<div>' +
+        '<span class="vin">' + v.vin + '</span> ' +
+        '<span class="model">' + v.model + ' | ' + v.region + '</span>' +
+      '</div>' +
+      '<span class="status ' + v.vehicleHealth.overallStatus + '">' + v.vehicleHealth.overallStatus.toUpperCase() + '</span>' +
+    '</div>' +
+    '<div style="margin-bottom:10px">' +
+      '<span class="mode-badge mode-' + mode + '">' + mode.toUpperCase() + '</span>' +
+      '<span class="conn-status ' + connState + '">' + v.connectivity.networkType + ' - ' + connState + '</span>' +
+    '</div>' +
+    '<div class="metrics">' +
+      '<div class="metric"><div class="metric-label">Speed</div><div class="metric-value">' + v.drivingState.speedKmph + ' km/h</div></div>' +
+      '<div class="metric"><div class="metric-label">Battery</div><div class="metric-value">' + v.batteryCharging.batteryLevel + '% (' + v.batteryCharging.rangeKm + ' km)</div></div>' +
+      '<div class="metric"><div class="metric-label">Engine Temp</div><div class="metric-value">' + v.vehicleHealth.temperatureCelsius + '°C</div></div>' +
+      '<div class="metric"><div class="metric-label">Health Score</div><div class="metric-value">' + v.vehicleHealth.vehicleHealthScore + '/100</div></div>' +
+      '<div class="metric"><div class="metric-label">Signal</div><div class="metric-value">' + v.connectivity.signalStrengthPercent + '% (' + v.connectivity.latencyMs + 'ms)</div></div>' +
+      '<div class="metric"><div class="metric-label">ECU CPU</div><div class="metric-value">' + v.ecuHealth.tcuCpuUsagePercent + '%</div></div>' +
+      '<div class="metric"><div class="metric-label">OTA</div><div class="metric-value">' + v.ota.otaStatus + otaProgress + '</div></div>' +
+      '<div class="metric"><div class="metric-label">DTCs</div><div class="metric-value">' + v.diagnostics.activeDtcCount + ' (' + v.diagnostics.highestDtcSeverity + ')</div></div>' +
+    '</div>' +
+    failureHTML;
+}
+</script>
+</body>
+</html>

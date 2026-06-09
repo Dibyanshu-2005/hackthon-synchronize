@@ -1,0 +1,38 @@
+{
+  "simulationIntervalMs": 5000,
+  "outputMode": "console",
+  "websocketPort": 8080,
+  "outputFilePath": "./output/telemetry.jsonl",
+  "vehicles": [
+    {
+      "vin": "VIN_A_001",
+      "model": "Model-S",
+      "region": "IN-North",
+      "initialState": "driving"
+    },
+    {
+      "vin": "VIN_B_002",
+      "model": "Model-X",
+      "region": "IN-South",
+      "initialState": "parked"
+    },
+    {
+      "vin": "VIN_C_003",
+      "model": "Model-Y",
+      "region": "IN-West",
+      "initialState": "charging"
+    },
+    {
+      "vin": "VIN_D_004",
+      "model": "Model-3",
+      "region": "IN-East",
+      "initialState": "idle"
+    },
+    {
+      "vin": "VIN_E_005",
+      "model": "Model-X",
+      "region": "IN-South",
+      "initialState": "driving"
+    }
+  ]
+}

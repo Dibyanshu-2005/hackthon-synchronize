@@ -1,0 +1,273 @@
+{ 
+
+  "vin": "VIN_B_002", 
+
+  "model": "Model-X", 
+
+  "region": "IN-South", 
+
+  "vehicleHealth": { 
+
+    "overallStatus": "warning", 
+
+    "engineStatus": "off", 
+
+    "temperatureCelsius": 36.5, 
+
+    "fuelLevelPercent": 62, 
+
+    "coolantLevelPercent": 78, 
+
+    "oilLevelPercent": 82, 
+
+    "vehicleHealthScore": 76 
+
+  }, 
+
+  "ecuHealth": { 
+
+    "primaryEcuId": "TCU_01", 
+
+    "primaryEcuStatus": "degraded", 
+
+    "tcuCpuUsagePercent": 82, 
+
+    "tcuMemoryUsagePercent": 76, 
+
+    "lastEcuHeartbeatAgeSeconds": 2520 
+
+  }, 
+
+  "drivingState": { 
+
+    "speedKmph": 0, 
+
+    "accelerationMps2": 0, 
+
+    "gear": "park", 
+
+    "brakeStatus": "engaged", 
+
+    "steeringAngleDegrees": 0, 
+
+    "drivingMode": "parked" 
+
+  }, 
+
+  "batteryCharging": { 
+
+    "batteryLevel": 62, 
+
+    "rangeKm": 260, 
+
+    "chargingStatus": "not_charging", 
+
+    "chargingType": "none", 
+
+    "chargingPowerKw": 0, 
+
+    "batteryTemperatureCelsius": 34.5 
+
+  }, 
+
+  "diagnostics": { 
+
+    "activeDtcCount": 1, 
+
+    "highestDtcSeverity": "medium", 
+
+    "dtcCodes": [ 
+
+      "U0100" 
+
+    ] 
+
+  }, 
+
+  "ota": { 
+
+    "updateId": "OTA_2026_06_001", 
+
+    "otaStatus": "not_started", 
+
+    "otaProgressPercent": 0, 
+
+    "targetVersion": "TCU-3.8.1", 
+
+    "otaPackageAvailable": false, 
+
+    "otaErrorCodes": [] 
+
+  }, 
+
+  "softwareInventory": { 
+
+    "componentsOutdatedCount": 1, 
+
+    "criticalComponentsOutdated": [ 
+
+      "TCU_FW" 
+
+    ], 
+
+    "lastSoftwareInventoryUpdate": "2026-06-09T10:00:00Z" 
+
+  }, 
+
+  "commandLifecycle": { 
+
+    "lastCommandId": "CMD_12345", 
+
+    "lastCommandType": "remote_climate_start", 
+
+    "lastCommandStatus": "delayed", 
+
+    "lastCommandIssueTime": "2026-06-09T10:20:00Z", 
+
+    "lastCommandExecuteTime": null, 
+
+    "lastCommandResponseTime": "2026-06-09T10:20:12Z", 
+
+    "lastCommandLatencyMs": 12000, 
+
+    "lastAckStatus": "delayed", 
+
+    "failedCommandsLast24h": 3, 
+
+    "delayedCommandsLast24h": 2 
+
+  }, 
+
+  "connectivity": { 
+
+    "networkType": "4G", 
+
+    "signalStrengthPercent": 32, 
+
+    "latencyMs": 850, 
+
+    "connectionState": "unstable", 
+
+    "lastConnectedTime": "2026-06-09T09:38:00Z", 
+
+    "lastHeartbeatMinutes": 42, 
+
+    "reconnectCountLast15Min": 8, 
+
+    "deviceTwinAgeMinutes": 39 
+
+  }, 
+
+  "cybersecurity": { 
+
+    "recentSecurityEventCount": 0, 
+
+    "highestSecuritySeverity": "none", 
+
+    "lastSecurityEventType": null 
+
+  }, 
+
+  "cloudServiceMetrics": { 
+
+    "ingestionLatencyMs": 220, 
+
+    "processingLatencyMs": 480, 
+
+    "messageLossRatePercent": 0.2, 
+
+    "serviceHealth": "healthy" 
+
+  }, 
+
+  "mobileApp": { 
+
+    "lastAppEventType": "remote_climate_clicked", 
+
+    "lastAppEventStatus": "initiated", 
+
+    "failedAppAttemptsLast24h": 2, 
+
+    "repeatedFeatureAttempts": 2 
+
+  }, 
+
+  "userConsent": { 
+
+    "dataSharingConsent": true, 
+
+    "locationSharingConsent": false, 
+
+    "analyticsConsent": true, 
+
+    "lastUpdated": "2026-06-01T09:00:00Z" 
+
+  }, 
+
+  "locationTrip": { 
+
+    "gpsAvailable": false, 
+
+    "latitude": null, 
+
+    "longitude": null, 
+
+    "activeTripId": null, 
+
+    "lastTripDistanceKm": 18.4, 
+
+    "lastTripDurationMinutes": 42 
+
+  }, 
+
+  "dataQuality": { 
+
+    "completeness": 0.91, 
+
+    "accuracy": 0.88, 
+
+    "anomalyCount": 1, 
+
+    "missingFields": [ 
+
+      "networkType" 
+
+    ] 
+
+  }, 
+
+  "failureReasons": [ 
+
+    { 
+
+      "errorCode": "STALE_HEARTBEAT", 
+
+      "message": "No recent heartbeat received from vehicle", 
+
+      "affectedComponent": "TCU", 
+
+      "severity": "high" 
+
+    } 
+
+  ], 
+
+  "timingAndCorrelation": { 
+
+    "lastEventTime": "2026-06-09T10:20:00Z", 
+
+    "lastIngestionTime": "2026-06-09T10:20:02Z", 
+
+    "lastProcessingTime": "2026-06-09T10:20:03Z", 
+
+    "lastSequenceNumber": 1042, 
+
+    "lastCorrelationId": "CORR_REMOTE_CLIMATE_001", 
+
+    "lastTraceId": "TRACE_789" 
+
+  }, 
+
+  "updatedAt": "2026-06-09T10:20:03Z" 
+
+} 
