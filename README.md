@@ -1,85 +1,111 @@
 # Predictive Connected Experience Guardian
 
-## What is this?
-
-A dashboard that predicts if your car's remote commands (lock, unlock, climate, etc.) will work BEFORE you press the button. If they won't work, it tells you why and what to do instead.
+A proactive intelligence layer for connected vehicles. Predicts if remote commands (lock, unlock, climate, etc.) will succeed BEFORE sending — and tells you why and what to do if they won't.
 
 ---
 
-## How to Run (Simple Version)
+## Quick Start
 
-### Step 1: Download the code
+### Step 1: Clone
 
 ```
 git clone https://github.com/Dibyanshu-2005/hackthon-synchronize.git
 cd hackthon-synchronize
 ```
 
-### Step 2: Install Python stuff
+### Step 2: Install
 
 ```
-cd Heckaton
+cd dashboard
 pip install -r requirements.txt
 ```
 
-### Step 3: Run the dashboard
+### Step 3: Run
 
 ```
 streamlit run app.py
 ```
 
-A browser tab will open at **http://localhost:8501** — that's your dashboard!
+Opens at **http://localhost:8501**
 
 ---
 
-## Want the full experience? (Optional)
+## Full Live Mode (Engine + Simulator + Dashboard)
 
-This connects the dashboard to the real prediction engine for live data.
+Three terminals:
 
-### Terminal 1 — Start the engine:
+```bash
+# Terminal 1 — Simulator (generates live vehicle telemetry)
+cd guardian_engine/Simulator
+./simulator.exe -output websocket
 
-```
-cd Guardian_Engine
+# Terminal 2 — Guardian Engine (scores, predicts, explains)
+cd guardian_engine
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
+uvicorn main:app --port 8000
 
-### Terminal 2 — Start the dashboard:
-
-```
-cd Heckaton
+# Terminal 3 — Dashboard
+cd dashboard
 streamlit run app.py
 ```
 
-When the engine is running, the dashboard shows a green "ENGINE LIVE" badge. Without it, you'll see "DEMO MODE" with sample data — both work fine for the demo.
+When the engine is running, the dashboard shows **"ENGINE LIVE"**. Without it, you get **"DEMO MODE"** with realistic sample data.
+
+Toggle **"Live Refresh"** in the sidebar for auto-updating data.
 
 ---
 
-## Pages in the Dashboard
+## Dashboard Pages
 
-| Page | What it shows |
-|------|--------------|
-| Fleet Overview | All vehicles at a glance, health scores, risk map |
+| Page | Purpose |
+|------|---------|
+| Fleet Overview | All vehicles at a glance — who needs attention |
+| User Perspective | Customer-facing view — health score, plain-language status |
 | Vehicle Detail | Deep dive into one vehicle's scores and predictions |
-| Command Analytics | Success rates, latency, failure patterns |
-| OTA Status | Which vehicles are ready for software updates |
-| Alerts & Actions | Active issues and what to do about them |
-| Business Insights | Executive view — impact numbers, heatmaps |
-| Guardian Intelligence | **THE COOL ONE** — predict commands live, what-if simulator |
-| Live Monitor | Real-time tracking with auto-refresh |
+| Guardian Intelligence | Live predictions, command execution, what-if simulator |
+| Command Analytics | Historical success rates, latency, failure patterns |
+| Alerts & Actions | Active issues with recommended actions |
+
+---
+
+## Project Structure
+
+```
+├── dashboard/                  # Streamlit frontend
+│   ├── app.py                  # Main page (Fleet Overview)
+│   ├── pages/                  # Dashboard pages
+│   ├── data/
+│   │   ├── engine_client.py    # API client (connects to guardian_engine)
+│   │   └── mock_data.py        # Fallback demo data
+│   └── requirements.txt
+│
+├── guardian_engine/            # FastAPI backend
+│   ├── main.py                # API server + simulator bridge
+│   ├── scoring.py             # Multi-factor scoring model
+│   ├── predictor.py           # Per-command success prediction
+│   ├── explainer.py           # Customer-friendly message generation
+│   ├── actions.py             # Action recommendation engine
+│   ├── models.py              # Core data models
+│   ├── payload_adapter.py     # Raw telemetry → VehicleState
+│   ├── api_models.py          # Pydantic API schemas
+│   ├── Simulator/             # Go simulator (5 vehicles, live telemetry)
+│   └── requirements.txt
+│
+└── README.md
+```
 
 ---
 
 ## Troubleshooting
 
-**"streamlit not found"** — Run `pip install streamlit` first
+**"streamlit not found"** — Run `pip install streamlit`
 
-**"No module named data"** — Make sure you're inside the `Heckaton` folder when you run `streamlit run app.py`
+**"No module named data"** — Make sure you're inside the `dashboard/` folder
 
-**Dashboard shows "DEMO MODE"** — That's fine! It means the engine isn't running. The dashboard still works with sample data.
+**"DEMO MODE"** — Engine isn't running. Dashboard works fine with sample data.
 
 ---
 
 ## Team
 
-Built at Hackathon 2026
+Built at Hackathon 2026 — Predictive Connected Experience Guardian
