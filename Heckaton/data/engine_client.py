@@ -184,10 +184,11 @@ def get_available_vins() -> list[str]:
 
 
 COMMANDS = [
-    "remote_lock",
-    "remote_unlock",
-    "remote_climate",
-    "remote_horn",
-    "status_refresh",
-    "ota_install",
+    "door_lock",
+    "door_unlock",
+    "climate_start",
+    "climate_stop",
+    "vehicle_status",
+    "engine_start",
+    "ota_update",
 ]

@@ -1,6 +1,7 @@
 """
-Mock data layer matching the engine team's API schema exactly.
-Replace function bodies with real HTTP calls when integrating.
+Mock data layer — realistic production fleet simulation.
+Models a Mercedes-like connected vehicle fleet where MOST vehicles are healthy
+and the Guardian catches the rare edge cases before they become customer failures.
 
 Endpoints modeled:
   1. /vehicles/{vin}/predict/{command}
@@ -16,17 +17,16 @@ from typing import Optional
 import pandas as pd
 
 
-# --- Constants ---
+# --- Commands (Mercedes-me style) ---
 
 COMMANDS = [
-    "remote_lock",
-    "remote_unlock",
-    "remote_climate_start",
-    "remote_climate_stop",
-    "vehicle_status_refresh",
+    "door_lock",
+    "door_unlock",
+    "climate_start",
+    "climate_stop",
+    "vehicle_status",
+    "engine_start",
     "ota_update",
-    "diagnostics_request",
-    "horn_and_lights",
 ]
 
 RISK_FACTORS = [
@@ -65,77 +65,72 @@ ACTION_LABELS = {
 
 SEVERITIES = ["info", "warning", "critical"]
 
+# --- REALISTIC fleet: Most vehicles are healthy, 1-2 edge cases ---
+
 VEHICLE_PROFILES = {
-    "VIN_A_001": {
-        "model": "Model-S",
+    "WDD2130421A123456": {
+        "model": "C-Class W206",
         "region": "IN-North",
-        "composite": 92, "connectivity": 90, "ecu_health": 95, "cmd_history": 88, "vehicle_health": 94,
+        "composite": 96, "connectivity": 98, "ecu_health": 97, "cmd_history": 95, "vehicle_health": 96,
         "status": "healthy",
         "risk_factors": [],
     },
-    "VIN_A_002": {
-        "model": "Model-X",
+    "WDD2230461A789012": {
+        "model": "E-Class W214",
         "region": "IN-West",
-        "composite": 88, "connectivity": 85, "ecu_health": 90, "cmd_history": 86, "vehicle_health": 91,
+        "composite": 94, "connectivity": 96, "ecu_health": 95, "cmd_history": 92, "vehicle_health": 94,
         "status": "healthy",
         "risk_factors": [],
     },
-    "VIN_B_001": {
-        "model": "Model-R",
-        "region": "IN-East",
-        "composite": 55, "connectivity": 48, "ecu_health": 60, "cmd_history": 50, "vehicle_health": 68,
-        "status": "warning",
-        "risk_factors": ["signal_weak", "high_latency"],
-    },
-    "VIN_B_002": {
-        "model": "Model-X",
+    "WDD1673021A345678": {
+        "model": "GLC X254",
         "region": "IN-South",
-        "composite": 48, "connectivity": 30, "ecu_health": 55, "cmd_history": 52, "vehicle_health": 76,
-        "status": "warning",
-        "risk_factors": ["heartbeat_stale", "signal_weak", "tcu_flapping"],
+        "composite": 93, "connectivity": 95, "ecu_health": 94, "cmd_history": 91, "vehicle_health": 93,
+        "status": "healthy",
+        "risk_factors": [],
     },
-    "VIN_C_001": {
-        "model": "Model-C",
+    "WDD2532171A456789": {
+        "model": "GLE W167",
+        "region": "IN-East",
+        "composite": 91, "connectivity": 93, "ecu_health": 92, "cmd_history": 89, "vehicle_health": 91,
+        "status": "healthy",
+        "risk_factors": [],
+    },
+    "WDD2470321A567890": {
+        "model": "S-Class W223",
         "region": "IN-North",
-        "composite": 25, "connectivity": 15, "ecu_health": 30, "cmd_history": 20, "vehicle_health": 40,
-        "status": "critical",
-        "risk_factors": ["heartbeat_stale", "ecu_unresponsive", "tcu_flapping", "command_timeout_history"],
-    },
-    "VIN_C_002": {
-        "model": "Model-S",
-        "region": "IN-South",
-        "composite": 35, "connectivity": 25, "ecu_health": 40, "cmd_history": 35, "vehicle_health": 50,
-        "status": "critical",
-        "risk_factors": ["network_congestion", "device_twin_stale", "battery_low"],
-    },
-    "VIN_D_001": {
-        "model": "Model-R",
-        "region": "IN-West",
-        "composite": 62, "connectivity": 58, "ecu_health": 65, "cmd_history": 60, "vehicle_health": 70,
-        "status": "warning",
-        "risk_factors": ["high_latency", "command_timeout_history"],
-    },
-    "VIN_D_002": {
-        "model": "Model-C",
-        "region": "IN-East",
-        "composite": 85, "connectivity": 82, "ecu_health": 88, "cmd_history": 84, "vehicle_health": 87,
+        "composite": 97, "connectivity": 99, "ecu_health": 98, "cmd_history": 96, "vehicle_health": 97,
         "status": "healthy",
         "risk_factors": [],
+    },
+    "WDD1770041A678901": {
+        "model": "GLA H247",
+        "region": "IN-West",
+        "composite": 68, "connectivity": 58, "ecu_health": 72, "cmd_history": 65, "vehicle_health": 80,
+        "status": "warning",
+        "risk_factors": ["signal_weak", "high_latency", "device_twin_stale"],
+    },
+    "WDD2060421A890123": {
+        "model": "A-Class W177",
+        "region": "IN-South",
+        "composite": 34, "connectivity": 18, "ecu_health": 42, "cmd_history": 30, "vehicle_health": 55,
+        "status": "critical",
+        "risk_factors": ["heartbeat_stale", "tcu_flapping", "ecu_unresponsive", "command_timeout_history"],
     },
 }
 
 CUSTOMER_MESSAGES = {
     "healthy": "All systems operational. Your vehicle is ready for remote commands.",
-    "warning": "Your vehicle's connectivity is declining. Remote features may become unavailable soon.",
-    "critical": "Your vehicle hasn't connected recently. Commands may be delayed until it reconnects.",
+    "warning": "Your vehicle's connectivity is weakening. Remote features may experience delays.",
+    "critical": "Your vehicle hasn't connected recently. Commands will be queued and delivered when connectivity is restored.",
 }
 
 TECHNICAL_DETAILS_TEMPLATES = {
-    "heartbeat_stale": "Last heartbeat: {minutes} min ago",
-    "signal_weak": "Signal: {pct}%",
-    "tcu_flapping": "Reconnects: {count} in 15 min | TCU: degraded",
+    "heartbeat_stale": "Last heartbeat: {minutes} min ago (threshold: 2 min)",
+    "signal_weak": "Signal: {pct}% (threshold: 40%)",
+    "tcu_flapping": "TCU reconnects: {count} in 15 min (threshold: 3)",
     "high_latency": "Avg latency: {ms}ms (threshold: 500ms)",
-    "battery_low": "Battery: {pct}%",
+    "battery_low": "12V battery: {pct}% (threshold: 30%)",
     "ecu_unresponsive": "ECU response: timeout after {ms}ms",
     "network_congestion": "Network load: {pct}% capacity",
     "device_twin_stale": "Device twin last synced: {minutes} min ago",
@@ -145,7 +140,7 @@ TECHNICAL_DETAILS_TEMPLATES = {
 }
 
 
-def _jitter(base, variance=5):
+def _jitter(base, variance=2):
     return max(0, min(100, base + random.uniform(-variance, variance)))
 
 
@@ -155,10 +150,10 @@ def _generate_technical_details(risk_factors):
         template = TECHNICAL_DETAILS_TEMPLATES.get(rf, rf)
         formatted = template.format(
             minutes=random.randint(20, 90),
-            pct=random.randint(15, 45),
-            count=random.randint(4, 12),
-            ms=random.randint(600, 3000),
-            timeout_count=random.randint(2, 6),
+            pct=random.randint(12, 35),
+            count=random.randint(5, 12),
+            ms=random.randint(800, 4000),
+            timeout_count=random.randint(2, 5),
             reason="low battery" if rf == "ota_blocked" else "connectivity",
         )
         parts.append(formatted)
@@ -173,58 +168,64 @@ def predict_command(vin: str, command: str) -> dict:
         return {"error": "Vehicle not found"}
 
     base_prob = profile["composite"] / 100.0
-    command_modifier = random.uniform(-0.15, 0.05)
-    success_prob = max(0.05, min(0.99, base_prob + command_modifier))
+
+    # Healthy cars: commands almost always succeed (95-99%)
+    if profile["status"] == "healthy":
+        success_prob = max(0.92, min(0.99, base_prob + random.uniform(-0.03, 0.02)))
+    elif profile["status"] == "warning":
+        success_prob = max(0.45, min(0.78, base_prob + random.uniform(-0.10, 0.05)))
+    else:
+        success_prob = max(0.08, min(0.35, base_prob * 0.6 + random.uniform(-0.10, 0.05)))
+
+    # Climate/engine start needs sustained connection — slightly lower for degraded vehicles
+    if command in ("climate_start", "engine_start") and profile["status"] != "healthy":
+        success_prob *= 0.85
 
     risk_factors = profile["risk_factors"][:]
-    if success_prob < 0.5 and random.random() > 0.5:
-        extra = random.choice([rf for rf in RISK_FACTORS if rf not in risk_factors])
-        risk_factors.append(extra)
+    is_degrading = profile["status"] == "critical" or (profile["status"] == "warning" and random.random() > 0.5)
+    confidence = round(random.uniform(0.82, 0.96), 2)
 
-    is_degrading = profile["status"] in ["warning", "critical"] and random.random() > 0.3
-    confidence = round(random.uniform(0.7, 0.95), 2)
-
-    if success_prob > 0.75:
+    if success_prob > 0.85:
         action = "execute_immediately"
         wait = 0
         fallback = None
-    elif success_prob > 0.5:
+    elif success_prob > 0.55:
         action = random.choice(["retry_with_backoff", "send_wakeup_ping"])
-        wait = random.randint(3, 10)
+        wait = random.randint(2, 8)
         fallback = "queue_and_notify"
     else:
         action = "queue_and_notify"
         wait = random.randint(10, 30)
         fallback = "escalate_to_support"
 
-    severity = "info" if success_prob > 0.75 else "warning" if success_prob > 0.4 else "critical"
+    severity = "info" if success_prob > 0.85 else "warning" if success_prob > 0.45 else "critical"
 
     return {
         "vin": vin,
         "command": command,
         "timestamp": datetime.now().isoformat() + "Z",
         "prediction": {
-            "success_probability": round(success_prob, 2),
+            "success_probability": round(success_prob, 3),
             "risk_factors": risk_factors,
             "is_degrading": is_degrading,
             "confidence": confidence,
         },
         "scores": {
-            "composite_score": round(_jitter(profile["composite"], 2), 1),
-            "connectivity_score": round(_jitter(profile["connectivity"], 3), 1),
-            "ecu_health_score": round(_jitter(profile["ecu_health"], 2), 1),
-            "command_history_score": round(_jitter(profile["cmd_history"], 3), 1),
-            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 2), 1),
+            "composite_score": round(_jitter(profile["composite"], 1), 1),
+            "connectivity_score": round(_jitter(profile["connectivity"], 2), 1),
+            "ecu_health_score": round(_jitter(profile["ecu_health"], 1), 1),
+            "command_history_score": round(_jitter(profile["cmd_history"], 2), 1),
+            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 1), 1),
         },
         "explanation": {
-            "customer_message": CUSTOMER_MESSAGES.get(severity, CUSTOMER_MESSAGES["warning"]),
+            "customer_message": CUSTOMER_MESSAGES.get(severity if severity != "info" else "healthy", CUSTOMER_MESSAGES["healthy"]),
             "severity": severity,
             "technical_details": _generate_technical_details(risk_factors) if risk_factors else "All systems nominal",
         },
         "recommended_action": {
             "action": action,
             "display_label": ACTION_LABELS[action],
-            "reason": f"Success probability {int(success_prob*100)}% — {'safe for direct execution' if action == 'execute_immediately' else 'too low for direct execution'}",
+            "reason": f"Success probability {int(success_prob*100)}% — {'safe for immediate execution' if action == 'execute_immediately' else 'queuing for optimal delivery'}",
             "estimated_wait_minutes": wait,
             "fallback_action": fallback,
             "details": {
@@ -251,11 +252,11 @@ def get_vehicle_detail(vin: str) -> dict:
         "model": profile["model"],
         "region": profile["region"],
         "scores": {
-            "composite_score": round(_jitter(profile["composite"], 2), 1),
-            "connectivity_score": round(_jitter(profile["connectivity"], 3), 1),
-            "ecu_health_score": round(_jitter(profile["ecu_health"], 2), 1),
-            "command_history_score": round(_jitter(profile["cmd_history"], 3), 1),
-            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 2), 1),
+            "composite_score": round(_jitter(profile["composite"], 1), 1),
+            "connectivity_score": round(_jitter(profile["connectivity"], 2), 1),
+            "ecu_health_score": round(_jitter(profile["ecu_health"], 1), 1),
+            "command_history_score": round(_jitter(profile["cmd_history"], 2), 1),
+            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 1), 1),
         },
         "status": {
             "overall": profile["status"],
@@ -297,7 +298,7 @@ def get_all_vehicles() -> dict:
         vehicles.append({
             "vin": vin,
             "model": profile["model"],
-            "composite_score": round(_jitter(profile["composite"], 2), 1),
+            "composite_score": round(_jitter(profile["composite"], 1), 1),
             "status": profile["status"],
             "risk_factor_count": len(profile["risk_factors"]),
             "top_risk": profile["risk_factors"][0] if profile["risk_factors"] else None,
@@ -307,12 +308,12 @@ def get_all_vehicles() -> dict:
 
 # --- Endpoint 5: /fleet/at-risk ---
 
-def get_fleet_at_risk(threshold: float = 60.0) -> dict:
+def get_fleet_at_risk(threshold: float = 75.0) -> dict:
     at_risk = []
     for vin, profile in VEHICLE_PROFILES.items():
-        score = round(_jitter(profile["composite"], 2), 1)
+        score = round(_jitter(profile["composite"], 1), 1)
         if score < threshold:
-            severity = "critical" if score < 35 else "warning"
+            severity = "critical" if score < 40 else "warning"
             at_risk.append({
                 "vin": vin,
                 "composite_score": score,
@@ -326,10 +327,9 @@ def get_fleet_at_risk(threshold: float = 60.0) -> dict:
     }
 
 
-# --- Helper functions for dashboard (derived from endpoints above) ---
+# --- Helper functions for dashboard ---
 
 def get_fleet_dataframe() -> pd.DataFrame:
-    """Get all vehicles as a DataFrame for table/chart display."""
     rows = []
     for vin, profile in VEHICLE_PROFILES.items():
         rows.append({
@@ -337,11 +337,11 @@ def get_fleet_dataframe() -> pd.DataFrame:
             "model": profile["model"],
             "region": profile["region"],
             "status": profile["status"],
-            "composite_score": round(_jitter(profile["composite"], 2), 1),
-            "connectivity_score": round(_jitter(profile["connectivity"], 3), 1),
-            "ecu_health_score": round(_jitter(profile["ecu_health"], 2), 1),
-            "command_history_score": round(_jitter(profile["cmd_history"], 3), 1),
-            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 2), 1),
+            "composite_score": round(_jitter(profile["composite"], 1), 1),
+            "connectivity_score": round(_jitter(profile["connectivity"], 2), 1),
+            "ecu_health_score": round(_jitter(profile["ecu_health"], 1), 1),
+            "command_history_score": round(_jitter(profile["cmd_history"], 2), 1),
+            "vehicle_health_score": round(_jitter(profile["vehicle_health"], 1), 1),
             "risk_factor_count": len(profile["risk_factors"]),
             "top_risk": profile["risk_factors"][0] if profile["risk_factors"] else "none",
             "risk_factors": profile["risk_factors"],
@@ -351,7 +351,6 @@ def get_fleet_dataframe() -> pd.DataFrame:
 
 
 def get_all_predictions() -> pd.DataFrame:
-    """Get predictions for every vehicle x command combination."""
     rows = []
     for vin in VEHICLE_PROFILES:
         for command in COMMANDS:
@@ -381,19 +380,25 @@ def get_all_predictions() -> pd.DataFrame:
 
 
 def get_command_history(hours: int = 48) -> pd.DataFrame:
-    """Simulated command execution history for analytics."""
     history = []
     now = datetime.now()
 
-    for _ in range(300):
+    for _ in range(400):
         vin = random.choice(list(VEHICLE_PROFILES.keys()))
         profile = VEHICLE_PROFILES[vin]
         command = random.choice(COMMANDS)
         timestamp = now - timedelta(hours=random.uniform(0, hours))
 
-        base_success = profile["composite"] / 100.0
-        success = random.random() < base_success
-        latency = random.uniform(0.3, 2.5) if profile["status"] == "healthy" else random.uniform(2.0, 15.0)
+        # Realistic: healthy cars succeed 96%+, warning 70%, critical 30%
+        if profile["status"] == "healthy":
+            success = random.random() < 0.97
+            latency = random.uniform(0.3, 1.8)
+        elif profile["status"] == "warning":
+            success = random.random() < 0.70
+            latency = random.uniform(1.5, 6.0)
+        else:
+            success = random.random() < 0.30
+            latency = random.uniform(4.0, 15.0)
 
         risk_factors = profile["risk_factors"] if not success else []
         failure_reason = risk_factors[0] if risk_factors else None
@@ -413,7 +418,6 @@ def get_command_history(hours: int = 48) -> pd.DataFrame:
 
 
 def get_alerts() -> pd.DataFrame:
-    """Active alerts derived from at-risk vehicles and predictions."""
     alerts = []
     now = datetime.now()
 
@@ -422,7 +426,7 @@ def get_alerts() -> pd.DataFrame:
             continue
 
         explanation = get_vehicle_explanation(vin)
-        severity = "critical" if profile["composite"] < 35 else "warning"
+        severity = "critical" if profile["composite"] < 40 else "warning"
 
         alerts.append({
             "vin": vin,
