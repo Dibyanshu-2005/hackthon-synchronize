@@ -11,6 +11,8 @@ from data.engine_client import (
 )
 from data.mock_data import get_fleet_dataframe, get_command_history
 
+import time
+
 st.set_page_config(
     page_title="Connected Experience Guardian",
     page_icon="🛡️",
@@ -39,6 +41,13 @@ with col_badge:
         st.success(f"ENGINE LIVE — {n} vehicles")
     else:
         st.warning("DEMO MODE")
+
+# --- Auto-refresh toggle (in sidebar) ---
+with st.sidebar:
+    live_refresh = st.toggle("🔴 Live Refresh", value=False)
+    if live_refresh:
+        refresh_rate = st.select_slider("Refresh interval", options=[3, 5, 10, 15], value=5)
+        st.caption(f"Refreshing every {refresh_rate}s")
 
 # --- KPIs ---
 metrics = get_fleet_metrics()
@@ -133,3 +142,8 @@ fig.update_layout(
     showlegend=False,
 )
 st.plotly_chart(fig, use_container_width=True)
+
+# --- Auto-refresh logic ---
+if live_refresh:
+    time.sleep(refresh_rate)
+    st.rerun()

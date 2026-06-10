@@ -23,20 +23,17 @@ REQUEST_TIMEOUT = 3
 
 
 def _engine_available() -> bool:
-    if "engine_status" not in st.session_state or st.session_state.get("_engine_check_stale", True):
-        try:
-            r = requests.get(f"{ENGINE_BASE_URL}/health", timeout=REQUEST_TIMEOUT)
-            data = r.json()
-            st.session_state["engine_status"] = data
-            st.session_state["engine_online"] = True
-            st.session_state["_engine_check_stale"] = False
-            return True
-        except Exception:
-            st.session_state["engine_status"] = None
-            st.session_state["engine_online"] = False
-            st.session_state["_engine_check_stale"] = False
-            return False
-    return st.session_state.get("engine_online", False)
+    """Check if engine is reachable. Always re-checks (no stale cache)."""
+    try:
+        r = requests.get(f"{ENGINE_BASE_URL}/health", timeout=REQUEST_TIMEOUT)
+        data = r.json()
+        st.session_state["engine_status"] = data
+        st.session_state["engine_online"] = True
+        return True
+    except Exception:
+        st.session_state["engine_status"] = None
+        st.session_state["engine_online"] = False
+        return False
 
 
 def get_engine_health() -> Optional[dict]:
